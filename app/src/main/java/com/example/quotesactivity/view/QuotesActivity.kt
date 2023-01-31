@@ -1,23 +1,27 @@
 package com.example.quotesactivity.view
 
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.Observer
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelProviders
-import com.example.quotesactivity.R
+import com.example.quotesactivity.databinding.ActivityQuotesBinding
 import com.example.quotesactivity.di.InjectorUtils
+import com.example.quotesactivity.model.Quote
 import com.example.quotesactivity.viewModel.QuotesViewModel
 
 class QuotesActivity : AppCompatActivity() {
+
+    private lateinit var binding: ActivityQuotesBinding
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_quotes)
+        binding = ActivityQuotesBinding.inflate(layoutInflater)
+        setContentView(binding.root)
 
-        initializeUI()
+        initializeUI(binding)
     }
 
-    private fun initializeUI() {
+    private fun initializeUI(viewBinding: ActivityQuotesBinding) {
         // Get the QuoteViewModelFactory with all of its dependencies constructed
         val factory = InjectorUtils.provideQuotesViewModelFactory()
         // Use ViewModelProviders class to create / get already created QuotesViewModel for this view (activity)
@@ -27,15 +31,26 @@ class QuotesActivity : AppCompatActivity() {
          * Observing LiveData from the QuotesViewModel which in turn observes LiveData
          * LiveData from the repository, which observes LiveData from the DAO
          */
-        viewModel.getQuotes().observe(this, Observer {
+        viewModel.getQuotes().observe(this, Observer { quotesList ->
             val stringBuilder = StringBuilder()
-            it.forEach { quote ->
+            quotesList.forEach { quote ->
                 stringBuilder.append("$quote\n\n")
             }
-            textView_quotes.text = stringBuilder.toString()
+            viewBinding.textViewQuotes.text = stringBuilder.toString()
         })
 
+        // When button is clicked, instantiate a Quote and add it to DB through the ViewModel
+        viewBinding.buttonAddQuote.setOnClickListener {
+            // Quote Instance creation
+            val quote = Quote(
+                viewBinding.editTextQuote.text.toString(),
+                viewBinding.editTextAuthor.text.toString()
+            )
 
+            viewModel.addQuote(quote)
 
+            viewBinding.editTextQuote.setText("")
+            viewBinding.editTextAuthor.setText("")
+        }
     }
 }
